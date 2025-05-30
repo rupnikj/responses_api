@@ -62,3 +62,5 @@ uploads/
 
 # Coverage directory used by tools like istanbul
 coverage/
+
+test_docs
