@@ -8,7 +8,8 @@ export async function createResponse(
   input: string, 
   previousResponseId?: string, 
   filePath?: string,
-  originalFilename?: string
+  originalFilename?: string,
+  webSearchEnabled?: boolean
 ) {
   const params: any = {
     model: 'gpt-4o',
@@ -16,6 +17,11 @@ export async function createResponse(
 
   if (previousResponseId) {
     params.previous_response_id = previousResponseId;
+  }
+
+  // Add web search tool if enabled
+  if (webSearchEnabled) {
+    params.tools = [{ type: 'web_search' }];
   }
 
   // Handle file upload if provided

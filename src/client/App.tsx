@@ -11,7 +11,8 @@ interface Message {
 interface ApiResponse {
   id: string;
   output: Array<{
-    content: Array<{
+    type?: string;
+    content?: Array<{
       text: string;
     }>;
   }>;
@@ -23,6 +24,7 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [lastResponseId, setLastResponseId] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [webSearchEnabled, setWebSearchEnabled] = useState<boolean>(false);
 
   // Ref for auto-scrolling to bottom of messages
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -76,6 +78,7 @@ const App: React.FC = () => {
           formData.append('previousResponseId', lastResponseId);
         }
         formData.append('file', currentFile);
+        formData.append('webSearchEnabled', webSearchEnabled.toString());
 
         response = await fetch('http://localhost:3001/api/responses', {
           method: 'POST',
@@ -90,7 +93,8 @@ const App: React.FC = () => {
           },
           body: JSON.stringify({
             input: currentInput,
-            previousResponseId: lastResponseId
+            previousResponseId: lastResponseId,
+            webSearchEnabled: webSearchEnabled
           }),
         });
       }
@@ -103,9 +107,24 @@ const App: React.FC = () => {
 
       const data: ApiResponse = await response.json();
       
+      // Find the text response - it might be in different positions depending on tools used
+      let responseText = 'No response received';
+      
+      if (data.output && Array.isArray(data.output)) {
+        // Look for the message output (not tool calls)
+        const messageOutput = data.output.find(item => 
+          item.type === 'message' || 
+          (item.content && Array.isArray(item.content) && item.content.length > 0)
+        );
+        
+        if (messageOutput && messageOutput.content && messageOutput.content[0]) {
+          responseText = messageOutput.content[0].text || 'No response received';
+        }
+      }
+      
       const assistantMessage: Message = {
         id: data.id,
-        text: data.output[0]?.content[0]?.text || 'No response received',
+        text: responseText,
         isUser: false,
         timestamp: new Date()
       };
@@ -237,6 +256,59 @@ const App: React.FC = () => {
         )}
         {/* Auto-scroll target */}
         <div ref={messagesEndRef} />
+      </div>
+
+      {/* Web Search Toggle */}
+      <div style={{ 
+        marginBottom: '16px',
+        padding: '12px',
+        border: '1px solid #ddd',
+        borderRadius: '8px',
+        backgroundColor: '#f0f8ff'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <label style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            cursor: 'pointer',
+            fontSize: '14px',
+            fontWeight: 'bold'
+          }}>
+            <div style={{ position: 'relative', marginRight: '8px' }}>
+              <input
+                type="checkbox"
+                checked={webSearchEnabled}
+                onChange={(e) => setWebSearchEnabled(e.target.checked)}
+                style={{ display: 'none' }}
+              />
+              <div style={{
+                width: '50px',
+                height: '26px',
+                backgroundColor: webSearchEnabled ? '#007bff' : '#ccc',
+                borderRadius: '13px',
+                position: 'relative',
+                transition: 'background-color 0.3s ease',
+                cursor: 'pointer'
+              }}>
+                <div style={{
+                  width: '22px',
+                  height: '22px',
+                  backgroundColor: 'white',
+                  borderRadius: '50%',
+                  position: 'absolute',
+                  top: '2px',
+                  left: webSearchEnabled ? '26px' : '2px',
+                  transition: 'left 0.3s ease',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                }} />
+              </div>
+            </div>
+            🌐 Enable Web Search
+          </label>
+          <span style={{ fontSize: '12px', color: '#666' }}>
+            {webSearchEnabled ? 'AI can search the web for current information' : 'AI will use only its training data'}
+          </span>
+        </div>
       </div>
 
       {/* File Upload Section */}
