@@ -33,7 +33,7 @@ function handleResponses(req: any, res: any) {
     fileInfo: req.file ? { originalname: req.file.originalname, size: req.file.size } : null
   });
   
-  const { input, previousResponseId, webSearchEnabled, codeInterpreterEnabled, deepWikiMcpEnabled } = req.body;
+  const { input, previousResponseId, webSearchEnabled, codeInterpreterEnabled, deepWikiMcpEnabled, imageGenerationEnabled } = req.body;
   if (!input || input.trim() === '') {
     console.log('Missing or empty input in request');
     return res.status(400).json({ error: 'Missing input' });
@@ -43,6 +43,7 @@ function handleResponses(req: any, res: any) {
   const enableWebSearch = webSearchEnabled === 'true' || webSearchEnabled === true;
   const enableCodeInterpreter = codeInterpreterEnabled === 'true' || codeInterpreterEnabled === true;
   const enableDeepWikiMcp = deepWikiMcpEnabled === 'true' || deepWikiMcpEnabled === true;
+  const enableImageGeneration = imageGenerationEnabled === 'true' || imageGenerationEnabled === true;
   
   console.log('Calling OpenAI with:', { 
     input, 
@@ -50,9 +51,10 @@ function handleResponses(req: any, res: any) {
     filePath: req.file?.path, 
     webSearchEnabled: enableWebSearch,
     codeInterpreterEnabled: enableCodeInterpreter,
-    deepWikiMcpEnabled: enableDeepWikiMcp
+    deepWikiMcpEnabled: enableDeepWikiMcp,
+    imageGenerationEnabled: enableImageGeneration
   });
-  createResponse(input, previousResponseId, req.file?.path, req.file?.originalname, enableWebSearch, enableCodeInterpreter, enableDeepWikiMcp)
+  createResponse(input, previousResponseId, req.file?.path, req.file?.originalname, enableWebSearch, enableCodeInterpreter, enableDeepWikiMcp, enableImageGeneration)
     .then(response => {
       console.log('OpenAI response received:', { id: response.id, outputLength: response.output?.length });
       res.json(response);

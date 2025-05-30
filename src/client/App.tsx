@@ -6,16 +6,30 @@ interface Message {
   isUser: boolean;
   timestamp: Date;
   fileName?: string;
+  imageUrl?: string;
+}
+
+// Define a specific type for items in the output array
+interface ApiOutputItem {
+  type?: string;
+  content?: Array<{
+    text: string;
+  }>;
+  // Fields for image_generation_call based on your previous log
+  id?: string; // The image generation call itself can have an id
+  status?: string;
+  background?: string;
+  output_format?: string; // e.g., "png"
+  result?: string;        // Base64 image data for image_generation_call
+  
+  // These were for other potential image structures, keep for flexibility or future use
+  image_url?: string; 
+  image_data?: string; 
 }
 
 interface ApiResponse {
   id: string;
-  output: Array<{
-    type?: string;
-    content?: Array<{
-      text: string;
-    }>;
-  }>;
+  output: Array<ApiOutputItem>; // Use the detailed ApiOutputItem here
 }
 
 const App: React.FC = () => {
@@ -27,6 +41,7 @@ const App: React.FC = () => {
   const [webSearchEnabled, setWebSearchEnabled] = useState<boolean>(false);
   const [codeInterpreterEnabled, setCodeInterpreterEnabled] = useState<boolean>(false);
   const [deepWikiMcpEnabled, setDeepWikiMcpEnabled] = useState<boolean>(false);
+  const [imageGenerationEnabled, setImageGenerationEnabled] = useState<boolean>(false);
 
   // Ref for auto-scrolling to bottom of messages
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -83,6 +98,7 @@ const App: React.FC = () => {
         formData.append('webSearchEnabled', webSearchEnabled.toString());
         formData.append('codeInterpreterEnabled', codeInterpreterEnabled.toString());
         formData.append('deepWikiMcpEnabled', deepWikiMcpEnabled.toString());
+        formData.append('imageGenerationEnabled', imageGenerationEnabled.toString());
 
         response = await fetch('http://localhost:3001/api/responses', {
           method: 'POST',
@@ -100,7 +116,8 @@ const App: React.FC = () => {
             previousResponseId: lastResponseId,
             webSearchEnabled: webSearchEnabled,
             codeInterpreterEnabled: codeInterpreterEnabled,
-            deepWikiMcpEnabled: deepWikiMcpEnabled
+            deepWikiMcpEnabled: deepWikiMcpEnabled,
+            imageGenerationEnabled: imageGenerationEnabled
           }),
         });
       }
@@ -112,27 +129,40 @@ const App: React.FC = () => {
       }
 
       const data: ApiResponse = await response.json();
+      console.log('Full API Response Output:', JSON.stringify(data.output, null, 2));
       
-      // Find the text response - it might be in different positions depending on tools used
-      let responseText = 'No response received';
+      let responseText = ''; // Initialize with empty string to build upon
+      let imageUrl: string | undefined = undefined;
       
       if (data.output && Array.isArray(data.output)) {
-        // Look for the message output (not tool calls)
-        const messageOutput = data.output.find(item => 
-          item.type === 'message' || 
-          (item.content && Array.isArray(item.content) && item.content.length > 0)
-        );
-        
-        if (messageOutput && messageOutput.content && messageOutput.content[0]) {
-          responseText = messageOutput.content[0].text || 'No response received';
+        // Process all output items
+        data.output.forEach(item => {
+          if (item.type === 'message' && item.content && Array.isArray(item.content)) {
+            const textContent = item.content.find(c => c.text);
+            if (textContent && textContent.text) {
+              responseText += (responseText ? '\n' : '') + textContent.text; // Append text if multiple message parts
+            }
+          } else if (item.type === 'image_generation_call' && item.result && item.output_format) {
+            imageUrl = `data:image/${item.output_format};base64,${item.result}`;
+            if (!responseText) { // If no specific text accompanied the image yet
+              responseText = 'Image generated:'; // Default caption
+            }
+          }
+        });
+
+        if (!responseText && !imageUrl) {
+          responseText = 'No recognizable content received from API.';
         }
+      } else {
+        responseText = 'No output array received from API.';
       }
       
       const assistantMessage: Message = {
-        id: data.id,
+        id: data.id || Date.now().toString(), // Use API id, fallback to timestamp
         text: responseText,
         isUser: false,
-        timestamp: new Date()
+        timestamp: new Date(),
+        imageUrl: imageUrl
       };
 
       setMessages(prev => [...prev, assistantMessage]);
@@ -234,6 +264,13 @@ const App: React.FC = () => {
                   {message.isUser ? 'You' : 'Assistant'}
                 </div>
                 <div style={{ whiteSpace: 'pre-wrap' }}>{message.text}</div>
+                {message.imageUrl && (
+                  <img 
+                    src={message.imageUrl} 
+                    alt="Generated Image" 
+                    style={{ maxWidth: '100%', borderRadius: '8px', marginTop: '8px' }}
+                  />
+                )}
                 {message.fileName && (
                   <div style={{ 
                     fontSize: '12px', 
@@ -419,6 +456,59 @@ const App: React.FC = () => {
           </label>
           <span style={{ fontSize: '12px', color: '#666' }}>
             {deepWikiMcpEnabled ? 'AI can search documentation and repositories via DeepWiki' : 'AI cannot access external documentation'}
+          </span>
+        </div>
+      </div>
+
+      {/* Image Generation Toggle */}
+      <div style={{ 
+        marginBottom: '16px',
+        padding: '12px',
+        border: '1px solid #ddd',
+        borderRadius: '8px',
+        backgroundColor: '#e6fff2' // A light green background
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <label style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            cursor: 'pointer',
+            fontSize: '14px',
+            fontWeight: 'bold'
+          }}>
+            <div style={{ position: 'relative', marginRight: '8px' }}>
+              <input
+                type="checkbox"
+                checked={imageGenerationEnabled}
+                onChange={(e) => setImageGenerationEnabled(e.target.checked)}
+                style={{ display: 'none' }}
+              />
+              <div style={{
+                width: '50px',
+                height: '26px',
+                backgroundColor: imageGenerationEnabled ? '#ff69b4' : '#ccc', // Hot pink when enabled
+                borderRadius: '13px',
+                position: 'relative',
+                transition: 'background-color 0.3s ease',
+                cursor: 'pointer'
+              }}>
+                <div style={{
+                  width: '22px',
+                  height: '22px',
+                  backgroundColor: 'white',
+                  borderRadius: '50%',
+                  position: 'absolute',
+                  top: '2px',
+                  left: imageGenerationEnabled ? '26px' : '2px',
+                  transition: 'left 0.3s ease',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                }} />
+              </div>
+            </div>
+            🖼️ Enable Image Generation
+          </label>
+          <span style={{ fontSize: '12px', color: '#666' }}>
+            {imageGenerationEnabled ? 'AI can generate images based on your prompts' : 'AI will only provide text responses'}
           </span>
         </div>
       </div>

@@ -11,7 +11,8 @@ export async function createResponse(
   originalFilename?: string,
   webSearchEnabled?: boolean,
   codeInterpreterEnabled?: boolean,
-  deepWikiMcpEnabled?: boolean
+  deepWikiMcpEnabled?: boolean,
+  imageGenerationEnabled?: boolean
 ) {
   const params: any = {
     model: 'gpt-4.1',
@@ -44,6 +45,9 @@ export async function createResponse(
       ],
       require_approval: 'never'
     });
+  }
+  if (imageGenerationEnabled) {
+    tools.push({ type: 'image_generation' });
   }
   if (tools.length > 0) {
     params.tools = tools;
