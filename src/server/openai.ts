@@ -92,11 +92,3 @@ export async function createResponse(
   const response = await openai.responses.create(params);
   return response;
 }
-
-function handleResponses(req: any, res: any) {
-  console.log('Received request:', { 
-    body: req.body,
-    hasFile: !!req.file,
-    fileInfo: req.file ? { originalname: req.file.originalname, size: req.file.size } : null
-  });
-}
