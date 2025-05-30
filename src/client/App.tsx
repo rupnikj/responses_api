@@ -25,6 +25,7 @@ const App: React.FC = () => {
   const [lastResponseId, setLastResponseId] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [webSearchEnabled, setWebSearchEnabled] = useState<boolean>(false);
+  const [codeInterpreterEnabled, setCodeInterpreterEnabled] = useState<boolean>(false);
 
   // Ref for auto-scrolling to bottom of messages
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -79,6 +80,7 @@ const App: React.FC = () => {
         }
         formData.append('file', currentFile);
         formData.append('webSearchEnabled', webSearchEnabled.toString());
+        formData.append('codeInterpreterEnabled', codeInterpreterEnabled.toString());
 
         response = await fetch('http://localhost:3001/api/responses', {
           method: 'POST',
@@ -94,7 +96,8 @@ const App: React.FC = () => {
           body: JSON.stringify({
             input: currentInput,
             previousResponseId: lastResponseId,
-            webSearchEnabled: webSearchEnabled
+            webSearchEnabled: webSearchEnabled,
+            codeInterpreterEnabled: codeInterpreterEnabled
           }),
         });
       }
@@ -307,6 +310,59 @@ const App: React.FC = () => {
           </label>
           <span style={{ fontSize: '12px', color: '#666' }}>
             {webSearchEnabled ? 'AI can search the web for current information' : 'AI will use only its training data'}
+          </span>
+        </div>
+      </div>
+
+      {/* Code Interpreter Toggle */}
+      <div style={{ 
+        marginBottom: '16px',
+        padding: '12px',
+        border: '1px solid #ddd',
+        borderRadius: '8px',
+        backgroundColor: '#fff5f5'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <label style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            cursor: 'pointer',
+            fontSize: '14px',
+            fontWeight: 'bold'
+          }}>
+            <div style={{ position: 'relative', marginRight: '8px' }}>
+              <input
+                type="checkbox"
+                checked={codeInterpreterEnabled}
+                onChange={(e) => setCodeInterpreterEnabled(e.target.checked)}
+                style={{ display: 'none' }}
+              />
+              <div style={{
+                width: '50px',
+                height: '26px',
+                backgroundColor: codeInterpreterEnabled ? '#28a745' : '#ccc',
+                borderRadius: '13px',
+                position: 'relative',
+                transition: 'background-color 0.3s ease',
+                cursor: 'pointer'
+              }}>
+                <div style={{
+                  width: '22px',
+                  height: '22px',
+                  backgroundColor: 'white',
+                  borderRadius: '50%',
+                  position: 'absolute',
+                  top: '2px',
+                  left: codeInterpreterEnabled ? '26px' : '2px',
+                  transition: 'left 0.3s ease',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                }} />
+              </div>
+            </div>
+            🐍 Enable Code Interpreter
+          </label>
+          <span style={{ fontSize: '12px', color: '#666' }}>
+            {codeInterpreterEnabled ? 'AI can run Python code and create visualizations' : 'AI will only provide text responses'}
           </span>
         </div>
       </div>

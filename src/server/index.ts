@@ -33,17 +33,24 @@ function handleResponses(req: any, res: any) {
     fileInfo: req.file ? { originalname: req.file.originalname, size: req.file.size } : null
   });
   
-  const { input, previousResponseId, webSearchEnabled } = req.body;
+  const { input, previousResponseId, webSearchEnabled, codeInterpreterEnabled } = req.body;
   if (!input || input.trim() === '') {
     console.log('Missing or empty input in request');
     return res.status(400).json({ error: 'Missing input' });
   }
   
-  // Convert webSearchEnabled to boolean (it comes as string from FormData)
+  // Convert to booleans (they come as strings from FormData)
   const enableWebSearch = webSearchEnabled === 'true' || webSearchEnabled === true;
+  const enableCodeInterpreter = codeInterpreterEnabled === 'true' || codeInterpreterEnabled === true;
   
-  console.log('Calling OpenAI with:', { input, previousResponseId, filePath: req.file?.path, webSearchEnabled: enableWebSearch });
-  createResponse(input, previousResponseId, req.file?.path, req.file?.originalname, enableWebSearch)
+  console.log('Calling OpenAI with:', { 
+    input, 
+    previousResponseId, 
+    filePath: req.file?.path, 
+    webSearchEnabled: enableWebSearch,
+    codeInterpreterEnabled: enableCodeInterpreter
+  });
+  createResponse(input, previousResponseId, req.file?.path, req.file?.originalname, enableWebSearch, enableCodeInterpreter)
     .then(response => {
       console.log('OpenAI response received:', { id: response.id, outputLength: response.output?.length });
       res.json(response);

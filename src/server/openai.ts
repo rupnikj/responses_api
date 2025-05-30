@@ -9,7 +9,8 @@ export async function createResponse(
   previousResponseId?: string, 
   filePath?: string,
   originalFilename?: string,
-  webSearchEnabled?: boolean
+  webSearchEnabled?: boolean,
+  codeInterpreterEnabled?: boolean
 ) {
   const params: any = {
     model: 'gpt-4o',
@@ -19,9 +20,19 @@ export async function createResponse(
     params.previous_response_id = previousResponseId;
   }
 
-  // Add web search tool if enabled
+  // Add tools if enabled
+  const tools = [];
   if (webSearchEnabled) {
-    params.tools = [{ type: 'web_search' }];
+    tools.push({ type: 'web_search' });
+  }
+  if (codeInterpreterEnabled) {
+    tools.push({ 
+      type: 'code_interpreter',
+      container: { type: 'auto' }
+    });
+  }
+  if (tools.length > 0) {
+    params.tools = tools;
   }
 
   // Handle file upload if provided
