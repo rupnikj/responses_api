@@ -26,6 +26,7 @@ const App: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [webSearchEnabled, setWebSearchEnabled] = useState<boolean>(false);
   const [codeInterpreterEnabled, setCodeInterpreterEnabled] = useState<boolean>(false);
+  const [deepWikiMcpEnabled, setDeepWikiMcpEnabled] = useState<boolean>(false);
 
   // Ref for auto-scrolling to bottom of messages
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -81,6 +82,7 @@ const App: React.FC = () => {
         formData.append('file', currentFile);
         formData.append('webSearchEnabled', webSearchEnabled.toString());
         formData.append('codeInterpreterEnabled', codeInterpreterEnabled.toString());
+        formData.append('deepWikiMcpEnabled', deepWikiMcpEnabled.toString());
 
         response = await fetch('http://localhost:3001/api/responses', {
           method: 'POST',
@@ -97,7 +99,8 @@ const App: React.FC = () => {
             input: currentInput,
             previousResponseId: lastResponseId,
             webSearchEnabled: webSearchEnabled,
-            codeInterpreterEnabled: codeInterpreterEnabled
+            codeInterpreterEnabled: codeInterpreterEnabled,
+            deepWikiMcpEnabled: deepWikiMcpEnabled
           }),
         });
       }
@@ -363,6 +366,59 @@ const App: React.FC = () => {
           </label>
           <span style={{ fontSize: '12px', color: '#666' }}>
             {codeInterpreterEnabled ? 'AI can run Python code and create visualizations' : 'AI will only provide text responses'}
+          </span>
+        </div>
+      </div>
+
+      {/* DeepWiki MCP Toggle */}
+      <div style={{ 
+        marginBottom: '16px',
+        padding: '12px',
+        border: '1px solid #ddd',
+        borderRadius: '8px',
+        backgroundColor: '#f0f0ff'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <label style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            cursor: 'pointer',
+            fontSize: '14px',
+            fontWeight: 'bold'
+          }}>
+            <div style={{ position: 'relative', marginRight: '8px' }}>
+              <input
+                type="checkbox"
+                checked={deepWikiMcpEnabled}
+                onChange={(e) => setDeepWikiMcpEnabled(e.target.checked)}
+                style={{ display: 'none' }}
+              />
+              <div style={{
+                width: '50px',
+                height: '26px',
+                backgroundColor: deepWikiMcpEnabled ? '#6f42c1' : '#ccc',
+                borderRadius: '13px',
+                position: 'relative',
+                transition: 'background-color 0.3s ease',
+                cursor: 'pointer'
+              }}>
+                <div style={{
+                  width: '22px',
+                  height: '22px',
+                  backgroundColor: 'white',
+                  borderRadius: '50%',
+                  position: 'absolute',
+                  top: '2px',
+                  left: deepWikiMcpEnabled ? '26px' : '2px',
+                  transition: 'left 0.3s ease',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                }} />
+              </div>
+            </div>
+            📚 Enable DeepWiki MCP
+          </label>
+          <span style={{ fontSize: '12px', color: '#666' }}>
+            {deepWikiMcpEnabled ? 'AI can search documentation and repositories via DeepWiki' : 'AI cannot access external documentation'}
           </span>
         </div>
       </div>

@@ -10,10 +10,11 @@ export async function createResponse(
   filePath?: string,
   originalFilename?: string,
   webSearchEnabled?: boolean,
-  codeInterpreterEnabled?: boolean
+  codeInterpreterEnabled?: boolean,
+  deepWikiMcpEnabled?: boolean
 ) {
   const params: any = {
-    model: 'gpt-4o',
+    model: 'gpt-4.1',
   };
 
   if (previousResponseId) {
@@ -29,6 +30,19 @@ export async function createResponse(
     tools.push({ 
       type: 'code_interpreter',
       container: { type: 'auto' }
+    });
+  }
+  if (deepWikiMcpEnabled) {
+    tools.push({
+      type: 'mcp',
+      server_label: 'deepwiki',
+      server_url: 'https://mcp.deepwiki.com/mcp',
+      allowed_tools: [
+        'read_wiki_structure',
+        'read_wiki_contents', 
+        'ask_question'
+      ],
+      require_approval: 'never'
     });
   }
   if (tools.length > 0) {

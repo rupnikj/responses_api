@@ -33,7 +33,7 @@ function handleResponses(req: any, res: any) {
     fileInfo: req.file ? { originalname: req.file.originalname, size: req.file.size } : null
   });
   
-  const { input, previousResponseId, webSearchEnabled, codeInterpreterEnabled } = req.body;
+  const { input, previousResponseId, webSearchEnabled, codeInterpreterEnabled, deepWikiMcpEnabled } = req.body;
   if (!input || input.trim() === '') {
     console.log('Missing or empty input in request');
     return res.status(400).json({ error: 'Missing input' });
@@ -42,15 +42,17 @@ function handleResponses(req: any, res: any) {
   // Convert to booleans (they come as strings from FormData)
   const enableWebSearch = webSearchEnabled === 'true' || webSearchEnabled === true;
   const enableCodeInterpreter = codeInterpreterEnabled === 'true' || codeInterpreterEnabled === true;
+  const enableDeepWikiMcp = deepWikiMcpEnabled === 'true' || deepWikiMcpEnabled === true;
   
   console.log('Calling OpenAI with:', { 
     input, 
     previousResponseId, 
     filePath: req.file?.path, 
     webSearchEnabled: enableWebSearch,
-    codeInterpreterEnabled: enableCodeInterpreter
+    codeInterpreterEnabled: enableCodeInterpreter,
+    deepWikiMcpEnabled: enableDeepWikiMcp
   });
-  createResponse(input, previousResponseId, req.file?.path, req.file?.originalname, enableWebSearch, enableCodeInterpreter)
+  createResponse(input, previousResponseId, req.file?.path, req.file?.originalname, enableWebSearch, enableCodeInterpreter, enableDeepWikiMcp)
     .then(response => {
       console.log('OpenAI response received:', { id: response.id, outputLength: response.output?.length });
       res.json(response);
