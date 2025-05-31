@@ -47,7 +47,7 @@ export async function createResponse(
     });
   }
   if (imageGenerationEnabled) {
-    tools.push({ type: 'image_generation' });
+    tools.push({ type: 'image_generation', moderation: 'low' });
   }
   if (tools.length > 0) {
     params.tools = tools;
